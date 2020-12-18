@@ -45,7 +45,7 @@ func main(){
 
 	// As explained earlier HandleFunc registers handler function for given pattern in the DefaultServeMux
 	// so, in simple words we are saying map h1 for all paths 	
-	http.HandleFunc("/",h1)
+	http.HandleFunc("/",h1) 
 
 	
 	log.Fatal(http.ListenAndServe(":9090", nil))
