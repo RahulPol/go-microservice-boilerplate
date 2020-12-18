@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 )
 
@@ -29,10 +30,23 @@ func main(){
 
 	// you can initialize ServeMux to specific values and use it as well
 
+
 	// Steps:
 	// 1. run the following code 
 	// 2. run curl localhost:9090
 		// output of above will be 404, as we haven't provided mapping for any
 		// path 	
-	http.ListenAndServe(":9090", nil)		
+	// 3: run curl localhost:9090
+		// now you will get Hello World with time stamp at server
+		// in fact for any path you will get the same output
+	h1 := func(http.ResponseWriter, *http.Request){
+		log.Println("Hello World")
+	}
+
+	// As explained earlier HandleFunc registers handler function for given pattern in the DefaultServeMux
+	// so, in simple words we are saying map h1 for all paths 	
+	http.HandleFunc("/",h1)
+
+	
+	log.Fatal(http.ListenAndServe(":9090", nil))
 }
