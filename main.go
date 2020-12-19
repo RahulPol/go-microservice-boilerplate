@@ -11,33 +11,31 @@ import (
 )
 
 func main(){
-	l := log.New(os.Stdout, "product-api ", log.LstdFlags)
+
+	// In this lecture we are going to look at Rest API
+	// So what is REST?
+	// For most part you will hear simpler definition like rest is transferring JSON over http, 
+	// though it not completely wrong.
+	// In more descriptive way, Rest stands for REpresentation State Transfer, which is architectural
+	// pattern proposed by Roy Fielding. It is most commonly used API pattern to 
+	// communicate between services.
+	// It has a very specific way of structuring APIs, meaning you will structure 
+	// in terms of resources and use HTTP Verbs to create/update/delete/read that 
+	// resource(which is usually represented by JSON, but its not must have)
+	// mostly you will see JSON being used, as it is lightweight and most of the languages
+	// have serializer/deserializer written for it
+
+	// Till now we have seen bookish kind of API examples but going forward we are
+	// going to see more professional API, we will build product API for coffee shop
+	// we will see about caching, security like additional layer involved
 	
-	// inject the logger into HelloHandler
-	hh := handlers.NewHelloHandler(l)
+	l := log.New(os.Stdout, "product-api ", log.LstdFlags)	
+	
+	ph := handlers.NewProductHandler(l)
 
-	// In previous lecture we passed nil to http.ListenAndServe, so the 
-	// defaultServeMux was used as http.ServeMux. here as well we can do
-	// similar thing by calling http.HandleFunc and passing hh and it will add
-	// hh.ServeHTTP func as handler for pattern. 
-
-	// But instead we will create a new ServerMux and register our HelloHandler by 
-	// calling Handle method. we will see its benifit later
 	sm := http.NewServeMux()
-	sm.Handle("/", hh)	
+	sm.Handle("/", ph)	
 
-	// adding another handler
-	gh := handlers.NewGoodByeHandler(l)
-	sm.Handle("/goodbye", gh)
-
-	// pass newly created serve mux here
-	// log.Fatal(http.ListenAndServe(":9090", sm))
-
-	// with http.ListenAndServe(":9090", sm) we are able to server request over http
-	// but still we are not at the point where we want to be
-	// since currently we have everything of http server as default like read/write/idle timeout, max header byte
-	// we need to tune this parameters so that we don't run into denial of service attack, 
-	// so we create our own server with fine tune
 	s:= &http.Server{
 		Addr: ":9090",
 		Handler: sm,
@@ -45,9 +43,7 @@ func main(){
 		ReadTimeout: 1*time.Second,
 		WriteTimeout: 1*time.Second,
 	}
-
-	// since we need to cater to multiple request at the same time
-	// listen on server parallely
+	
 	go func(){
 		err := s.ListenAndServe()
 		if err != nil{
@@ -55,15 +51,11 @@ func main(){
 		}
 	}()
 
-	// The following code will make sure that if
-	// there is an interrupt to server, it will be 
-	// closed gracefully.
 	sigChan := make(chan os.Signal)
 	signal.Notify(sigChan, os.Interrupt)
 	signal.Notify(sigChan, os.Kill)
 	sig := <- sigChan
 	l.Println("Received terminate, graceful shutdown",sig)
 	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	s.Shutdown(tc)
-	
+	s.Shutdown(tc)	
 }
