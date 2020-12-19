@@ -17,6 +17,20 @@ func NewProductHandler(l *log.Logger) *ProductHandler{
 }
 
 func (p *ProductHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request){
+	if r.Method == http.MethodGet{
+		p.getProducts(rw,r)
+		return
+	}	
+
+	// catch all
+	// try running curl localhost:9090 -X POST -v to reach this code
+	rw.WriteHeader(http.StatusMethodNotAllowed)
+}
+
+// in order to make Rest style API instead of using logic into ServeHTTP 
+// lets create separate method for HTTP verbs, so we can provide support
+// for HTTP Get/Put/Post/Delete
+func (p *ProductHandler) getProducts(rw http.ResponseWriter, r *http.Request){
 	products := data.GetProducts()
 
 	// One of the method to marshal json
