@@ -25,12 +25,17 @@ func (p *ProductHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request){
 	}	
 
 	if r.Method == http.MethodPost{
+		// try running
+		// curl -v  -d "{\"name\":\"tea\", \"description\":\"nice cup of tea\", \"sku\":\"ack083\"}" -H "Content-Type: application/json" -X POST http://localhost:9090
 		p.addProduct(rw,r)
 		return
 	}
 
 	if r.Method == http.MethodPut{
+		// try running
+		// curl -v  -d "{\"name\":\"tea1\", \"description\":\"nice cup of tea\", \"sku\":\"ack083\"}" -H "Content-Type: application/json" -X PUT http://localhost:9090/1
 		p.updateProduct(rw, r)
+		return
 	}
 
 	// catch all
