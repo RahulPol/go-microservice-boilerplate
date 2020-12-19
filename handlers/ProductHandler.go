@@ -4,6 +4,8 @@ import (
 	"go-microservice-boilerplate/data"
 	"log"
 	"net/http"
+	"regexp"
+	"strconv"
 )
 
 type ProductHandler struct{
@@ -22,6 +24,15 @@ func (p *ProductHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request){
 		return
 	}	
 
+	if r.Method == http.MethodPost{
+		p.addProduct(rw,r)
+		return
+	}
+
+	if r.Method == http.MethodPut{
+		p.updateProduct(rw, r)
+	}
+
 	// catch all
 	// try running curl localhost:9090 -X POST -v to reach this code
 	rw.WriteHeader(http.StatusMethodNotAllowed)
@@ -31,6 +42,7 @@ func (p *ProductHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request){
 // lets create separate method for HTTP verbs, so we can provide support
 // for HTTP Get/Put/Post/Delete
 func (p *ProductHandler) getProducts(rw http.ResponseWriter, r *http.Request){
+	p.l.Println("Handle GET request")
 	products := data.GetProducts()
 
 	// One of the method to marshal json
@@ -38,7 +50,6 @@ func (p *ProductHandler) getProducts(rw http.ResponseWriter, r *http.Request){
 	// if err != nil{
 	// 	http.Error(rw,"Unable to marshal json", http.StatusInternalServerError)
 	// }
-
 	// rw.Write(d)
 
 	// other and better approach, better because it wont store the marshalled json
@@ -47,4 +58,49 @@ func (p *ProductHandler) getProducts(rw http.ResponseWriter, r *http.Request){
 	if err != nil{
 		http.Error(rw,"Unable to marshal json", http.StatusInternalServerError)
 	}	
+}
+
+
+func (p *ProductHandler) addProduct(rw http.ResponseWriter, r *http.Request){
+	p.l.Println("Handle POST request")
+
+	prod := &data.Product{}
+
+	err := prod.FromJSON(r.Body)
+	if err != nil{
+		p.l.Println("Unmarshalling error", err)
+		http.Error(rw, "Unable to unmarshal json", http.StatusBadRequest)
+		return
+	}
+
+	data.AddProduct(prod)		
+}
+	
+func (p *ProductHandler) updateProduct(rw http.ResponseWriter, r *http.Request){
+	regex := regexp.MustCompile("/([0-9]+)")
+	g := regex.FindAllStringSubmatch(r.URL.Path, -1)		
+
+	if len(g) != 1{
+		http.Error(rw,"Invalid parameter: id", http.StatusInternalServerError)	
+		return
+	}
+
+	if len(g[0]) != 2{
+		http.Error(rw,"Invalid parameter: id", http.StatusInternalServerError)	
+		return
+	}
+
+	idString := g[0][1]
+	id,_ := strconv.Atoi(idString)
+
+	prod := &data.Product{}
+
+	err := prod.FromJSON(r.Body)
+	if err != nil{
+		p.l.Println("Unmarshalling error", err)
+		http.Error(rw, "Unable to unmarshal json", http.StatusBadRequest)
+		return
+	}
+
+	data.UpdateProduct(id, prod)
 }
