@@ -4,16 +4,19 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"regexp"
 	"time"
+
+	"github.com/go-playground/validator/v10"
 )
 
 
 type Product struct {
 	ID          int     `json:"id"`
-	Name        string  `json:"name"`
+	Name        string  `json:"name" validate:"required"`
 	Description string  `json:"description"`
-	Price       float32 `json:"price"`
-	SKU         string  `json:"sku"`
+	Price       float32 `json:"price" validate:"gt=0"`
+	SKU         string  `json:"sku" validate:"required,sku"`
 	CreateOn    string  `json:"-"`
 	UpdatedOn   string  `json:"-"`
 	DeletedOn   string  `json:"-"`
@@ -25,6 +28,28 @@ type Products []*Product
 func (p *Product) FromJSON(r io.Reader) error{
 	d := json.NewDecoder(r)
 	return d.Decode(p)
+}
+
+func (p *Product) Validate() error{
+	// for now we are keeping validator in the same struct
+	// but for bigger projects its safe to keep a global validator
+	// with common configuration 
+	validate := validator.New()
+	validate.RegisterValidation("sku", validateSKU)
+	return  validate.Struct(p)
+}
+
+// This is a custom validator at field level
+func validateSKU(fl validator.FieldLevel) bool{
+	// sku must have pattern like abc-kkls-lks
+	re := regexp.MustCompile(`[a-z]{3}-[a-z]{4}-[a-z]{3}`)
+	matches := re.FindAllString(fl.Field().String(), -1)
+
+	if len(matches) != 1{
+		return false
+	}
+	
+	return true
 }
 
 // Notice in this function as well dependency injection is done
